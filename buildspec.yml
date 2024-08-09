@@ -1,0 +1,22 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - echo Installing dependencies...
+      - python -m pip install --upgrade pip
+      - pip install -r requirements.txt
+      - pip install pyinstaller  # Ensure pyinstaller is installed
+
+  build:
+    commands:
+      - echo Building the executable...
+      - pyinstaller --onefile ui.py
+
+  post_build:
+    commands:
+      - echo Build complete
+      - echo Listing the contents of the dist directory...
+      - dir dist
+      - echo Copying the executable to the S3 bucket...
+      - aws s3 cp dist\ui.exe s3://builddb/tictactoe.exe
