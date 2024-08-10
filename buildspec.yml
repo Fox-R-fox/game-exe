@@ -4,25 +4,34 @@ phases:
   install:
     commands:
       - echo Installing dependencies...
-      - python -m pip install --upgrade pip
-      - pip install -r requirements.txt
+      - python -m pip install --upgrade pip  # Upgrade pip to the latest version
+      - pip install -r requirements.txt -v  # Install dependencies with verbose output for debugging
       - pip install pyinstaller  # Ensure pyinstaller is installed
 
   build:
     commands:
       - echo Building the executable...
-      - pyinstaller --onefile ui.py
+      - pyinstaller --onefile ui.py  # Package the application into a single executable
 
   post_build:
     commands:
       - echo Build complete
       - echo Creating a folder for the executable...
-      - mkdir dist\flappybird
+      - mkdir dist\flappybird  # Create a directory for the executable
       - echo Moving the executable to the folder...
-      - move dist\ui.exe dist\flappybird\
+      - move dist\ui.exe dist\flappybird\  # Move the executable into the new directory
       - echo Listing the contents of the folder...
-      - dir dist\flappybird
+      - dir dist\flappybird  # List the contents of the directory
       - echo Zipping the folder...
-      - powershell Compress-Archive -Path dist\flappybird -DestinationPath dist\flappybird-executable.zip
+      - powershell Compress-Archive -Path dist\flappybird -DestinationPath dist\flappybird-executable.zip  # Zip the folder
       - echo Copying the zipped folder to the S3 bucket...
-      - aws s3 cp dist\flappybird-executable.zip s3://builddb/flappybird-executable.zip
+      - aws s3 cp dist\flappybird-executable.zip s3://builddb/flappybird-executable.zip  # Upload the zip file to S3
+
+artifacts:
+  files:
+    - dist\flappybird-executable.zip  # Specify the artifact to store in S3
+  discard-paths: yes  # Discard the directory structure in the artifact
+
+cache:
+  paths:
+    - 'C:\Users\Administrator\AppData\Local\pip\Cache'  # Cache pip downloads to speed up future installs
