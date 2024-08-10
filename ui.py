@@ -28,13 +28,13 @@ class FlappyBirdGUI:
         self.update_game()
 
     def get_player_name(self):
-        name = simpledialog.askstring("Enter Username", "Please enter your name:", parent=self.root)
-        if name:
-            self.register_user(name)
-            return name
-        else:
-            messagebox.showerror("Error", "Username is required to play the game.")
-            return None
+        while True:
+            name = simpledialog.askstring("Enter Username", "Please enter your name:", parent=self.root)
+            if name and name.strip():  # Check if the name is not empty or just spaces
+                self.register_user(name)
+                return name
+            else:
+                messagebox.showerror("Error", "Username is required to play the game. Please enter a valid username.")
 
     def register_user(self, username):
         try:
@@ -58,6 +58,11 @@ class FlappyBirdGUI:
             self.canvas.create_text(200, 380, text=f"Score: {self.game.score}", font=('Helvetica', 20), fill="white")
             self.update_leaderboard(self.game.score)
             self.print_leaderboard()
+            retry = messagebox.askyesno("Game Over", "Do you want to retry?")
+            if retry:
+                self.reset_game()
+            else:
+                self.root.quit()
             return
 
         # Update game logic
@@ -108,10 +113,22 @@ class FlappyBirdGUI:
         if os.path.exists(leaderboard_file):
             with open(leaderboard_file, "r") as f:
                 leaderboard = json.load(f)
-            leaderboard_text = "\n".join([f"{user}: {score} points" for user, score in leaderboard.items()])
+            
+            # Sort the leaderboard by scores in descending order
+            sorted_leaderboard = sorted(leaderboard.items(), key=lambda item: item[1], reverse=True)
+
+            leaderboard_text = "\n".join([f"{user}: {score} points" for user, score in sorted_leaderboard])
             messagebox.showinfo("Leaderboard", leaderboard_text)
         else:
             messagebox.showinfo("Leaderboard", "No leaderboard data available.")
+
+    def reset_game(self):
+        # Reset the game state and start a new game
+        self.game = FlappyBirdGame(400, 600)
+        self.canvas.delete("all")
+        self.bird_image = self.canvas.create_oval(50, 300, 90, 340, fill="yellow")
+        self.pipes = []
+        self.update_game()
 
 if __name__ == "__main__":
     root = tk.Tk()
