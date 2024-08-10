@@ -44,7 +44,7 @@ class FlappyBirdGUI:
             elif response.status_code == 409:
                 messagebox.showinfo("Info", "User already registered.")
             else:
-                messagebox.showerror("Error", "Failed to register user.")
+                messagebox.showerror("Error", f"Failed to register user: {response.status_code} - {response.text}")
         except Exception as e:
             messagebox.showerror("Error", f"An error occurred: {e}")
 
@@ -88,39 +88,26 @@ class FlappyBirdGUI:
         self.root.after(30, self.update_game)
 
     def update_leaderboard(self, score):
-        leaderboard_file = "leaderboard.json"
-        
-        # Load existing leaderboard
-        if os.path.exists(leaderboard_file):
-            with open(leaderboard_file, "r") as f:
-                leaderboard = json.load(f)
-        else:
-            leaderboard = {}
-
-        # Update user's score
-        if self.username in leaderboard:
-            leaderboard[self.username] = max(leaderboard[self.username], score)
-        else:
-            leaderboard[self.username] = score
-
-        # Save updated leaderboard
-        with open(leaderboard_file, "w") as f:
-            json.dump(leaderboard, f)
+        try:
+            response = requests.post(f"{self.api_url}/update_leaderboard", json={"username": self.username, "score": score})
+            if response.status_code == 200:
+                messagebox.showinfo("Success", "Leaderboard updated successfully.")
+            else:
+                messagebox.showerror("Error", f"Failed to update leaderboard: {response.status_code} - {response.text}")
+        except Exception as e:
+            messagebox.showerror("Error", f"An error occurred while updating the leaderboard: {e}")
 
     def print_leaderboard(self):
-        leaderboard_file = "leaderboard.json"
-        
-        if os.path.exists(leaderboard_file):
-            with open(leaderboard_file, "r") as f:
-                leaderboard = json.load(f)
-            
-            # Sort the leaderboard by scores in descending order
-            sorted_leaderboard = sorted(leaderboard.items(), key=lambda item: item[1], reverse=True)
-
-            leaderboard_text = "\n".join([f"{user}: {score} points" for user, score in sorted_leaderboard])
-            messagebox.showinfo("Leaderboard", leaderboard_text)
-        else:
-            messagebox.showinfo("Leaderboard", "No leaderboard data available.")
+        try:
+            response = requests.get(f"{self.api_url}/leaderboard")
+            if response.status_code == 200:
+                leaderboard = response.json()
+                leaderboard_text = "\n".join([f"{user['username']}: {user['wins']} points" for user in leaderboard])
+                messagebox.showinfo("Leaderboard", leaderboard_text)
+            else:
+                messagebox.showerror("Error", f"Failed to retrieve leaderboard: {response.status_code} - {response.text}")
+        except Exception as e:
+            messagebox.showerror("Error", f"An error occurred while retrieving the leaderboard: {e}")
 
     def reset_game(self):
         # Reset the game state and start a new game
