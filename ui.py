@@ -11,7 +11,7 @@ class FlappyBirdGUI:
         self.root.title("Flappy Bird")
         
         # Set Minikube IP and API URL
-        self.minikube_ip = "http://52.207.250.71:30176"  # Replace <your-minikube-ip> with your actual Minsikube IP
+        self.minikube_ip = "http://52.207.250.71:30176"  # Replace <your-minikube-ip> with your actual Minikube IP
         self.api_url = f"{self.minikube_ip}/api"
 
         # Prompt for username
