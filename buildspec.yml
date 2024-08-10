@@ -5,6 +5,7 @@ phases:
     commands:
       - echo Installing dependencies...
       - python -m pip install --upgrade pip
+      - pip install --only-binary psycopg2-binary psycopg2-binary==2.9.3  # Force binary installation for psycopg2-binary
       - pip install -r requirements.txt
       - pip install pyinstaller  # Ensure pyinstaller is installed
 
@@ -21,4 +22,13 @@ phases:
       - echo Zipping the executable...
       - powershell Compress-Archive -Path dist\ui.exe -DestinationPath dist\flappybird-executable.zip
       - echo Copying the zipped executable to the S3 bucket...
-      - aws s3 cp dist\tictactoe-executable.zip s3://builddb/flappybird-executable.zip
+      - aws s3 cp dist\flappybird-executable.zip s3://builddb/flappybird-executable.zip
+
+artifacts:
+  files:
+    - dist\flappybird-executable.zip
+  discard-paths: yes
+
+cache:
+  paths:
+    - 'C:\Users\Administrator\AppData\Local\pip\Cache'
