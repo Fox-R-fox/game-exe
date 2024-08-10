@@ -5,7 +5,7 @@ phases:
     commands:
       - echo Installing dependencies...
       - python -m pip install --upgrade pip
-      - pip install --only-binary psycopg2-binary psycopg2-binary==2.9.3  # Force binary installation for psycopg2-binary
+      - pip install --only-binary psycopg2-binary psycopg2-binary==2.9.9  # Force binary installation for psycopg2-binary
       - pip install -r requirements.txt
       - pip install pyinstaller  # Ensure pyinstaller is installed
 
