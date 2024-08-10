@@ -1,39 +1,39 @@
-class TicTacToe:
-    def __init__(self):
-        self.board = [' ' for _ in range(9)]  # Use a single list to represent the 3x3 board
-        self.current_winner = None  # Keep track of the winner!
+import random
+from player import Bird
 
-    def make_move(self, square, letter):
-        if self.board[square] == ' ':
-            self.board[square] = letter
-            if self.winner(square, letter):
-                self.current_winner = letter
-            return True
-        return False
+class FlappyBirdGame:
+    def __init__(self, width, height):
+        self.width = width
+        self.height = height
+        self.bird = Bird(self.width // 4, self.height // 2)
+        self.pipes = []
+        self.score = 0
+        self.game_over = False
 
-    def winner(self, square, letter):
-        # Check the row
-        row_ind = square // 3
-        row = self.board[row_ind*3:(row_ind+1)*3]
-        if all([s == letter for s in row]):
-            return True
-        # Check the column
-        col_ind = square % 3
-        column = [self.board[col_ind+i*3] for i in range(3)]
-        if all([s == letter for s in column]):
-            return True
-        # Check the diagonals
-        if square % 2 == 0:
-            diagonal1 = [self.board[i] for i in [0, 4, 8]]  # left to right diagonal
-            if all([s == letter for s in diagonal1]):
-                return True
-            diagonal2 = [self.board[i] for i in [2, 4, 6]]  # right to left diagonal
-            if all([s == letter for s in diagonal2]):
-                return True
-        return False
+    def add_pipe(self):
+        gap = 100
+        pipe_height = random.randint(50, self.height - gap - 50)
+        self.pipes.append([self.width, pipe_height])
 
-    def empty_squares(self):
-        return ' ' in self.board
+    def update(self):
+        if self.game_over:
+            return
 
-    def available_moves(self):
-        return [i for i, x in enumerate(self.board) if x == ' ']
+        self.bird.update()
+        if self.bird.y > self.height or self.bird.y < 0:
+            self.game_over = True
+
+        for pipe in self.pipes:
+            pipe[0] -= 5
+            pipe_x, pipe_height = pipe
+            if pipe_x < self.bird.x < pipe_x + 50:
+                if self.bird.y < pipe_height or self.bird.y > pipe_height + 100:
+                    self.game_over = True
+
+        self.pipes = [pipe for pipe in self.pipes if pipe[0] > -50]
+
+        if not self.game_over:
+            self.score += 1
+
+        if len(self.pipes) == 0 or self.pipes[-1][0] < self.width // 2:
+            self.add_pipe()

@@ -1,21 +1,14 @@
-import random
+class Bird:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.velocity = 0
+        self.gravity = 0.5
+        self.lift = -10
 
-class Player:
-    def __init__(self, letter):
-        self.letter = letter
+    def flap(self):
+        self.velocity = self.lift
 
-    def get_move(self, game):
-        pass
-
-class HumanPlayer(Player):
-    def __init__(self, letter, name):
-        super().__init__(letter)
-        self.name = name
-
-class ComputerPlayer(Player):
-    def __init__(self, letter):
-        super().__init__(letter)
-
-    def get_move(self, game):
-        square = random.choice(game.available_moves())
-        return square
+    def update(self):
+        self.velocity += self.gravity
+        self.y += self.velocity

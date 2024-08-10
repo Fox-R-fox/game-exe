@@ -1,67 +1,31 @@
 import tkinter as tk
 from tkinter import simpledialog, messagebox
-from game import TicTacToe
-from player import HumanPlayer, ComputerPlayer
+from game import FlappyBirdGame
+import json
+import os
 import requests
 
-class TicTacToeGUI:
+class FlappyBirdGUI:
     def __init__(self, root):
         self.root = root
-        self.root.title("Tic Tac Toe")
-        self.api_url = "http://your-flask-api-url"  # Update with the actual API URL
-        self.player_name = self.get_player_name()
-        self.game = TicTacToe()
-        self.x_player = HumanPlayer('X', self.player_name)
-        self.o_player = ComputerPlayer('O')
-        self.buttons = [[None for _ in range(3)] for _ in range(3)]
-        self.create_widgets()
-        self.play_game()
+        self.root.title("Flappy Bird")
+        
+        # Set Minikube IP and API URL
+        self.minikube_ip = "http://<your-minikube-ip>:30007"  # Replace <your-minikube-ip> with your actual Minikube IP
+        self.api_url = f"{self.minikube_ip}/api"
 
-    def create_widgets(self):
-        for row in range(3):
-            for col in range(3):
-                button = tk.Button(self.root, text='', width=10, height=3,
-                                   command=lambda r=row, c=col: self.handle_click(r, c))
-                button.grid(row=row, column=col)
-                self.buttons[row][col] = button
+        # Prompt for username
+        self.username = self.get_player_name()
+        if not self.username:
+            self.root.quit()  # Exit the game if no username is provided
 
-    def handle_click(self, row, col):
-        if self.game.board[row * 3 + col] == ' ' and self.game.current_winner is None:
-            self.game.make_move(row * 3 + col, 'X')
-            self.buttons[row][col].config(text='X')
-            if self.game.current_winner:
-                self.end_game(f'{self.player_name} (X) wins!')
-                return
-            elif not self.game.empty_squares():
-                self.end_game('It\'s a tie!')
-                return
-
-            self.computer_move()
-            if self.game.current_winner:
-                self.end_game('Computer (O) wins!')
-                return
-            elif not self.game.empty_squares():
-                self.end_game('It\'s a tie!')
-
-    def computer_move(self):
-        empty_squares = self.game.available_moves()
-        move = random.choice(empty_squares)
-        self.game.make_move(move, 'O')
-        row, col = divmod(move, 3)
-        self.buttons[row][col].config(text='O')
-
-    def end_game(self, message):
-        messagebox.showinfo("Game Over", message)
-        if 'wins' in message:
-            self.update_leaderboard(self.player_name)
-        self.print_leaderboard()
-        self.root.after(2000, self.reset_game)
-
-    def reset_game(self):
-        self.game = TicTacToe()
-        for row in range(3):
-            for col in range(3):
-                self.buttons[row][col].config(text='')
+        self.canvas = tk.Canvas(root, width=400, height=600, bg="skyblue")
+        self.canvas.pack()
+        self.game = FlappyBirdGame(400, 600)
+        self.bird_image = self.canvas.create_oval(50, 300, 90, 340, fill="yellow")
+        self.pipes = []
+        self.root.bind("<space>", self.flap)
+        self.update_game()
 
     def get_player_name(self):
         name = simpledialog.askstring("Enter Username", "Please enter your name:", parent=self.root)
@@ -70,7 +34,7 @@ class TicTacToeGUI:
             return name
         else:
             messagebox.showerror("Error", "Username is required to play the game.")
-            self.root.quit()
+            return None
 
     def register_user(self, username):
         try:
@@ -84,29 +48,72 @@ class TicTacToeGUI:
         except Exception as e:
             messagebox.showerror("Error", f"An error occurred: {e}")
 
-    def update_leaderboard(self, username):
-        try:
-            response = requests.post(f"{self.api_url}/update_leaderboard", json={"username": username})
-            if response.status_code != 200:
-                messagebox.showerror("Error", "Failed to update leaderboard.")
-        except Exception as e:
-            messagebox.showerror("Error", f"An error occurred: {e}")
+    def flap(self, event):
+        self.game.bird.flap()
+
+    def update_game(self):
+        if self.game.game_over:
+            self.canvas.create_text(200, 300, text="Game Over", font=('Helvetica', 30), fill="red")
+            self.canvas.create_text(200, 340, text=f"Player: {self.username}", font=('Helvetica', 20), fill="white")
+            self.canvas.create_text(200, 380, text=f"Score: {self.game.score}", font=('Helvetica', 20), fill="white")
+            self.update_leaderboard(self.game.score)
+            self.print_leaderboard()
+            return
+
+        # Update game logic
+        self.game.update()
+
+        # Update bird position on screen
+        self.canvas.coords(self.bird_image, 50, self.game.bird.y, 90, self.game.bird.y + 40)
+
+        # Clear old pipes
+        for pipe in self.pipes:
+            self.canvas.delete(pipe[0])
+            self.canvas.delete(pipe[1])
+
+        self.pipes.clear()
+
+        # Draw new pipes
+        for pipe_x, pipe_height in self.game.pipes:
+            top_pipe = self.canvas.create_rectangle(pipe_x, 0, pipe_x + 50, pipe_height, fill="green")
+            bottom_pipe = self.canvas.create_rectangle(pipe_x, pipe_height + 100, pipe_x + 50, 600, fill="green")
+            self.pipes.append((top_pipe, bottom_pipe))
+
+        # Call update_game again after a short delay
+        self.root.after(30, self.update_game)
+
+    def update_leaderboard(self, score):
+        leaderboard_file = "leaderboard.json"
+        
+        # Load existing leaderboard
+        if os.path.exists(leaderboard_file):
+            with open(leaderboard_file, "r") as f:
+                leaderboard = json.load(f)
+        else:
+            leaderboard = {}
+
+        # Update user's score
+        if self.username in leaderboard:
+            leaderboard[self.username] = max(leaderboard[self.username], score)
+        else:
+            leaderboard[self.username] = score
+
+        # Save updated leaderboard
+        with open(leaderboard_file, "w") as f:
+            json.dump(leaderboard, f)
 
     def print_leaderboard(self):
-        try:
-            response = requests.get(f"{self.api_url}/leaderboard")
-            if response.status_code == 200:
-                leaderboard = response.json()
-                leaderboard_text = "\n".join([f"{entry['username']}: {entry['wins']} wins" for entry in leaderboard])
-                messagebox.showinfo("Leaderboard", leaderboard_text)
-            else:
-                messagebox.showerror("Error", "Failed to fetch leaderboard.")
-        except Exception as e:
-            messagebox.showerror("Error", f"An error occurred: {e}")
-
-    def play_game(self):
-        self.root.mainloop()
+        leaderboard_file = "leaderboard.json"
+        
+        if os.path.exists(leaderboard_file):
+            with open(leaderboard_file, "r") as f:
+                leaderboard = json.load(f)
+            leaderboard_text = "\n".join([f"{user}: {score} points" for user, score in leaderboard.items()])
+            messagebox.showinfo("Leaderboard", leaderboard_text)
+        else:
+            messagebox.showinfo("Leaderboard", "No leaderboard data available.")
 
 if __name__ == "__main__":
     root = tk.Tk()
-    app = TicTacToeGUI(root)
+    app = FlappyBirdGUI(root)
+    root.mainloop()
