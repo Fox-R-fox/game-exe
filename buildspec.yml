@@ -5,8 +5,7 @@ phases:
     commands:
       - echo Installing dependencies...
       - python -m pip install --upgrade pip
-      - pip install --only-binary :all: psycopg2-binary  # Install only binary wheels
-      - pip install -r requirements.txt -v  # Install the rest of the dependencies
+      - pip install -r requirements.txt
       - pip install pyinstaller  # Ensure pyinstaller is installed
 
   build:
@@ -17,22 +16,9 @@ phases:
   post_build:
     commands:
       - echo Build complete
-      - echo Creating a folder for the executable...
-      - mkdir dist\flappybird
-      - echo Moving the executable to the folder...
-      - move dist\ui.exe dist\flappybird\
-      - echo Listing the contents of the folder...
-      - dir dist\flappybird
-      - echo Zipping the folder...
-      - powershell Compress-Archive -Path dist\flappybird -DestinationPath dist\flappybird-executable.zip
-      - echo Copying the zipped folder to the S3 bucket...
-      - aws s3 cp dist\flappybird-executable.zip s3://builddb/flappybird-executable.zip
-
-artifacts:
-  files:
-    - dist\flappybird-executable.zip
-  discard-paths: yes
-
-cache:
-  paths:
-    - 'C:\Users\Administrator\AppData\Local\pip\Cache'
+      - echo Listing the contents of the dist directory...
+      - dir dist
+      - echo Zipping the executable...
+      - powershell Compress-Archive -Path dist\ui.exe -DestinationPath dist\flappybird-executable.zip
+      - echo Copying the zipped executable to the S3 bucket...
+      - aws s3 cp dist\tictactoe-executable.zip s3://builddb/flappybird-executable.zip
