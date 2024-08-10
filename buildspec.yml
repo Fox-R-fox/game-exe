@@ -4,34 +4,35 @@ phases:
   install:
     commands:
       - echo Installing dependencies...
-      - python -m pip install --upgrade pip  # Upgrade pip to the latest version
-      - pip install -r requirements.txt -v  # Install dependencies with verbose output for debugging
+      - python -m pip install --upgrade pip
+      - pip install --only-binary :all: psycopg2-binary  # Install only binary wheels
+      - pip install -r requirements.txt -v  # Install the rest of the dependencies
       - pip install pyinstaller  # Ensure pyinstaller is installed
 
   build:
     commands:
       - echo Building the executable...
-      - pyinstaller --onefile ui.py  # Package the application into a single executable
+      - pyinstaller --onefile ui.py
 
   post_build:
     commands:
       - echo Build complete
       - echo Creating a folder for the executable...
-      - mkdir dist\flappybird  # Create a directory for the executable
+      - mkdir dist\flappybird
       - echo Moving the executable to the folder...
-      - move dist\ui.exe dist\flappybird\  # Move the executable into the new directory
+      - move dist\ui.exe dist\flappybird\
       - echo Listing the contents of the folder...
-      - dir dist\flappybird  # List the contents of the directory
+      - dir dist\flappybird
       - echo Zipping the folder...
-      - powershell Compress-Archive -Path dist\flappybird -DestinationPath dist\flappybird-executable.zip  # Zip the folder
+      - powershell Compress-Archive -Path dist\flappybird -DestinationPath dist\flappybird-executable.zip
       - echo Copying the zipped folder to the S3 bucket...
-      - aws s3 cp dist\flappybird-executable.zip s3://builddb/flappybird-executable.zip  # Upload the zip file to S3
+      - aws s3 cp dist\flappybird-executable.zip s3://builddb/flappybird-executable.zip
 
 artifacts:
   files:
-    - dist\flappybird-executable.zip  # Specify the artifact to store in S3
-  discard-paths: yes  # Discard the directory structure in the artifact
+    - dist\flappybird-executable.zip
+  discard-paths: yes
 
 cache:
   paths:
-    - 'C:\Users\Administrator\AppData\Local\pip\Cache'  # Cache pip downloads to speed up future installs
+    - 'C:\Users\Administrator\AppData\Local\pip\Cache'
